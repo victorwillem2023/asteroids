@@ -5,6 +5,7 @@ from player import Player
 from asteroid import Asteroid
 from asteroidfield import AsteroidField
 from shots import Shot
+from score import Score
 import sys
 
 def main():
@@ -21,7 +22,10 @@ def main():
     Asteroid.containers = (drawable, updatable, asteroids)
     AsteroidField.containers = (updatable)
     Shot.containers = (shots, drawable, updatable)
+    Score.containers = (drawable)
 
+    score_font = pygame.font.Font(None, 36)  # create a font object
+    score = Score(score_font, 10, 10)  
 
     player = Player(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, PLAYER_RADIUS)
 
@@ -40,7 +44,7 @@ def main():
         log_state()
         screen.fill((0,0,0))
         
-        for obj in drawable:
+        for obj in       drawable:
             obj.draw(screen)
 
         updatable.update(dt)
@@ -51,6 +55,8 @@ def main():
                     log_event("asteroid_shot")
                     ast.split()
                     shot.kill()
+                    score.update(ast.get_radius())
+                    log_event("score_updated", value=score.getScore())
 
             if ast.collides_with(player) == True:
                 log_event("player_hit")
