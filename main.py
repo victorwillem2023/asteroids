@@ -6,6 +6,8 @@ from asteroid import Asteroid
 from asteroidfield import AsteroidField
 from shots import Shot
 from score import Score
+from pausemenu import PauseMenu
+from powerup import PowerUp
 import sys
 
 def main():
@@ -23,6 +25,8 @@ def main():
     AsteroidField.containers = (updatable)
     Shot.containers = (shots, drawable, updatable)
     Score.containers = (drawable)
+    PowerUp.containers = (drawable, updatable)
+
 
     score_font = pygame.font.Font(None, 36)  # create a font object
     score = Score(score_font, 10, 10)  
@@ -30,39 +34,59 @@ def main():
     player = Player(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, PLAYER_RADIUS)
 
     asteroidfield = AsteroidField()
+    pause = PauseMenu()
 
     print("Starting Asteroids!")
     print(f"Screen width: {SCREEN_WIDTH}\nScreen height: {SCREEN_HEIGHT}")
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
     dt = 0
+    paused = False
+    powerup_menu_shown = False
 
     while True:
-        for event in pygame.event.get():
+        events = pygame.event.get()
+        for event in events:
             if event.type == pygame.QUIT:
                 return
         log_state()
         screen.fill((0,0,0))
         
-        for obj in       drawable:
+        for obj in drawable:
             obj.draw(screen)
+        
+        if score.getScore() % 10 != 0:
+            powerup_menu_shown = False
 
-        updatable.update(dt)
+        if not paused and not powerup_menu_shown and score.getScore() % 10 == 0 and score.getScore() != 0:
+            paused = True
+            pause.selection = 0
+            powerup_menu_shown = True
 
-        for ast in asteroids:
-            for shot in shots:
-                if shot.collides_with(ast) == True:
-                    log_event("asteroid_shot")
-                    ast.split()
-                    shot.kill()
-                    score.update(ast.get_radius())
-                    log_event("score_updated", value=score.getScore())
+        elif paused == True:
+            pause.draw(screen)
+            pause.update(player)
+            if pause.selection > 0:
+                paused = False
+            
+        else:
+            updatable.update(dt)
 
-            if ast.collides_with(player) == True:
-                log_event("player_hit")
-                print("Game Over!")
-                sys.exit()
 
+            for ast in asteroids:
+                for shot in shots:
+
+                    if shot.collides_with(ast) == True:
+                        log_event("asteroid_shot")
+                        ast.split()
+                        shot.kill()
+                        score.update(ast.get_radius())
+                        log_event("score_updated", score=score.getScore())
+
+                if ast.collides_with(player) == True:
+                    log_event("player_hit")
+                    print("Game Over!")
+                    sys.exit()
 
         pygame.display.flip()
         dt = clock.tick(60)/1000

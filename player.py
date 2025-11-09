@@ -1,6 +1,7 @@
 import pygame
 from circleshape import CircleShape
 from shots import Shot
+from logger import log_event
 from constants import PLAYER_TURN_SPEED, PLAYER_SPEED, PLAYER_SHOOT_SPEED, PLAYER_SHOOT_COOLDOWN_SECONDS, SHOT_RADIUS
 
 class Player(CircleShape):
@@ -8,6 +9,9 @@ class Player(CircleShape):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0
         self.shot_cooldown = 0
+        self.powerup = ""
+        self.size_multiplier = 0
+        self.speed_multiplier = 0
 
     # in the player class
     def triangle(self):
@@ -41,11 +45,18 @@ class Player(CircleShape):
     
     def move(self, dt):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
-        self.position += forward * PLAYER_SPEED * dt
-
+        if self.powerup == "speed":
+            self.speed_multiplier += 100
+            self.powerup = ""
+            log_event("Player speed multiplier increased", value=self.speed_multiplier)
+        self.position += forward * (PLAYER_SPEED + self.speed_multiplier) * dt
 
     def shoot(self):
         if self.shot_cooldown <= 0:
-            shot = Shot(self.position.x, self.position.y, SHOT_RADIUS)
+            if self.powerup == "bigger":
+                self.size_multiplier += 1
+                self.powerup = ""
+                log_event("Shot size multiplier increased", size=SHOT_RADIUS + self.size_multiplier)
+            shot = Shot(self.position.x, self.position.y, SHOT_RADIUS + self.size_multiplier)
             shot.velocity = pygame.Vector2(0,1).rotate(self.rotation) * PLAYER_SHOOT_SPEED
-        self.shot_cooldown = PLAYER_SHOOT_COOLDOWN_SECONDS
+            self.shot_cooldown = PLAYER_SHOOT_COOLDOWN_SECONDS
